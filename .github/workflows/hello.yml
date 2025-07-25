@@ -57,7 +57,8 @@ jobs:
             Get-Content -Path "install.log"
           } else {
             Write-Host "Installation log not found"
-         
+          }
+          
       - name: Ensure Installation Succeeded
         run: |
           if (-not (Test-Path "C:\Program Files (x86)\dbForge DevOps Automation for SQL Server")) {
