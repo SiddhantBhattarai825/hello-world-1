@@ -11,19 +11,24 @@ jobs:
           Write-Host "Total Memory: $($memory.TotalVisibleMemorySize / 1MB) MB"
           $disk = Get-PSDrive -Name C
           Write-Host "Free Disk Space on C: $($disk.Free / 1GB) GB"
+
       - name: Set PowerShell Execution Policy
         run: Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+
       - name: Install Chocolatey
         run: |
           Set-ExecutionPolicy Bypass -Scope Process -Force
           [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
           Invoke-WebRequest https://chocolatey.org/install.ps1 -UseBasicParsing | Invoke-Expression
+
       - name: Try Chocolatey Install
         run: choco install dbforge-sql-devops -y --no-progress --debug
         continue-on-error: true
+
       - name: Display Chocolatey Log
         if: failure()
         run: Get-Content -Path "C:\ProgramData\chocolatey\logs\chocolatey.log"
+
       - name: Display dbForge Installer Log
         if: failure()
         run: |
@@ -32,6 +37,7 @@ jobs:
           } else {
             Write-Host "Installer log not found"
           }
+
       - name: Fallback to Manual Install
         if: failure()
         run: |
@@ -50,6 +56,7 @@ jobs:
           } else {
             Write-Host "Manual installation failed with exit code $LASTEXITCODE"
           }
+
       - name: Display Manual Install Log
         if: failure()
         run: |
