@@ -1,6 +1,6 @@
-name: Install dbForge DevOps Automation for SQL Server
+name: Manual Install dbForge DevOps Automation for SQL Server
 
-on: 
+on:
   push:
     branches:
       - main
@@ -21,66 +21,32 @@ jobs:
       - name: Set PowerShell Execution Policy
         run: Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
-      - name: Install Chocolatey
+      - name: Download dbForge SQL DevOps Installer
         run: |
-          Set-ExecutionPolicy Bypass -Scope Process -Force
-          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-          Invoke-WebRequest https://chocolatey.org/install.ps1 -UseBasicParsing | Invoke-Expression
-
-      - name: Try Chocolatey Install
-        run: |
-          choco install dbforge-sql-devops -y --no-progress --debug --verbose --log-level=debug
-        continue-on-error: true
-
-      - name: Display Chocolatey Log
-        if: failure()
-        run: Get-Content -Path "C:\ProgramData\chocolatey\logs\chocolatey.log"
-
-      - name: Display dbForge Installer Log
-        if: failure()
-        run: |
-          if (Test-Path "C:\Users\runneradmin\AppData\Local\Temp\chocolatey\dbforge-sql-devops\dbforge-sql-devops.1.2.78.Install.log") {
-            Get-Content -Path "C:\Users\runneradmin\AppData\Local\Temp\chocolatey\dbforge-sql-devops\dbforge-sql-devops.1.2.78.Install.log"
-          } else {
-            Write-Host "Installer log not found"
-          }
-
-      - name: Fallback to Manual Install
-        if: failure()
-        run: |
-          Write-Host "Starting manual installation of dbForge DevOps Automation..."
-          # Check system resources again
-          $memory = Get-CimInstance Win32_OperatingSystem
-          Write-Host "Free Memory: $($memory.FreePhysicalMemory / 1MB) MB"
-          $disk = Get-PSDrive -Name C
-          Write-Host "Free Disk Space on C: $($disk.Free / 1GB) GB"
-          
-          # Download the installer
+          # Download the installer from the provided URL
           Invoke-WebRequest -Uri "https://choco.devart.com/s/39D10B263B1FA4133C620152B61E984BDB890ECA659E8BE9889E799896EC0414/devopspowershellsql12.exe" -OutFile "devopspowershellsql12.exe"
-          
-          # Run the installer silently
-          Start-Process -FilePath ".\devopspowershellsql12.exe" -ArgumentList "/VERYSILENT /FORCECLOSEAPPLICATIONS /ngen=0 /log=`"install.log`"" -Verb RunAs -Wait
 
-          # Check the installation exit code
-          if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3010 -or $LASTEXITCODE -eq 1641) {
-            Write-Host "Manual installation succeeded with exit code $LASTEXITCODE"
+      - name: Run dbForge SQL DevOps Installer Silently
+        run: |
+          # Run the installer with silent arguments
+          Start-Process -FilePath ".\devopspowershellsql12.exe" -ArgumentList "/VERYSILENT /FORCECLOSEAPPLICATIONS /ngen=0 /log=`"install.log`"" -Wait
+
+      - name: Verify Installation
+        run: |
+          # Verify if the installation was successful by checking the installed program location
+          if (Test-Path "C:\Program Files (x86)\dbForge DevOps Automation for SQL Server") {
+            Write-Host "Installation succeeded."
           } else {
-            Write-Host "Manual installation failed with exit code $LASTEXITCODE"
+            Write-Host "Installation failed."
+            exit 1
           }
 
-      - name: Display Manual Install Log
+      - name: Display Installation Logs
         if: failure()
         run: |
+          # Display the install log in case of failure
           if (Test-Path "install.log") {
             Get-Content -Path "install.log"
           } else {
-            Write-Host "Manual install log not found"
+            Write-Host "Installation log not found"
           }
-
-      - name: Ensure Installation Succeeded
-        run: |
-          if (-not (Test-Path "C:\Program Files (x86)\dbForge DevOps Automation for SQL Server")) {
-            Write-Host "Installation failed"
-            exit 1
-          }
-          Write-Host "Installation succeeded"
