@@ -1,4 +1,4 @@
-name: Install dbForge SQL Tools via PowerShell
+name: Manual Install dbForge DevOps Automation for SQL Server
 
 on:
   push:
@@ -21,6 +21,21 @@ jobs:
       - name: Set PowerShell Execution Policy
         run: Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
+      - name: Install PowerShellGet and PackageManagement
+        run: |
+          # Install or ensure PackageManagement and PowerShellGet modules are installed and imported
+          if (-not (Get-Module -ListAvailable -Name PackageManagement)) {
+            Install-Module -Name PackageManagement -Force -AllowClobber -Scope CurrentUser
+          }
+
+          if (-not (Get-Module -ListAvailable -Name PowerShellGet)) {
+            Install-Module -Name PowerShellGet -Force -AllowClobber -Scope CurrentUser
+          }
+
+          # Import the modules to ensure they are available
+          Import-Module PowerShellGet -Force
+          Import-Module PackageManagement -Force
+
       - name: Download dbForge SQL Tools Installer
         run: |
           # Download the installer from the provided URL
@@ -32,7 +47,7 @@ jobs:
           $installerPath = ".\devopspowershellsql12.exe"
           $arguments = "/VERYSILENT /FORCECLOSEAPPLICATIONS /ngen=0 /log=`"install.log`""
           
-          # Run the installer silently
+          # Run the installer with silent arguments
           Start-Process -FilePath $installerPath -ArgumentList $arguments -Wait
 
       - name: Verify Installation
