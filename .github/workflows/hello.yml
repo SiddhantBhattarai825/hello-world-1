@@ -21,20 +21,21 @@ jobs:
       - name: Set PowerShell Execution Policy
         run: Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
-      - name: Uninstall Existing PackageManagement Module (if in use)
+      - name: Install PowerShellGet and PackageManagement
         run: |
-          # Unload and uninstall existing PackageManagement module
-          Uninstall-Module -Name PackageManagement -Force -AllVersions
+          # Check if PackageManagement module exists, if not install it
+          if (-not (Get-Module -ListAvailable -Name PackageManagement)) {
+            Install-Module -Name PackageManagement -Force -AllowClobber -Scope CurrentUser
+          }
+          
+          # Install PowerShellGet if necessary
+          if (-not (Get-Module -ListAvailable -Name PowerShellGet)) {
+            Install-Module -Name PowerShellGet -Force -AllowClobber -Scope CurrentUser
+          }
+          
+          # Import modules to ensure they are available for use
           Import-Module PowerShellGet -Force
           Import-Module PackageManagement -Force
-
-      - name: Install PowerShellGet and PackageManagement Modules
-        run: |
-          # Force installation of PowerShellGet and PackageManagement
-          Install-Module -Name PowerShellGet -Force -AllowClobber -Scope CurrentUser
-          Install-Module -Name PackageManagement -Force -AllowClobber -Scope CurrentUser
-          Import-Module PowerShellGet
-          Import-Module PackageManagement
 
       - name: Download dbForge SQL DevOps Installer
         run: |
