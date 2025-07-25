@@ -6,8 +6,11 @@ jobs:
     steps:
       - name: Check System Resources
         run: |
-          Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory, TotalVisibleMemorySize
-          Get-PSDrive -Name C
+          $memory = Get-CimInstance Win32_OperatingSystem
+          Write-Host "Free Memory: $($memory.FreePhysicalMemory / 1MB) MB"
+          Write-Host "Total Memory: $($memory.TotalVisibleMemorySize / 1MB) MB"
+          $disk = Get-PSDrive -Name C
+          Write-Host "Free Disk Space on C: $($disk.Free / 1GB) GB"
       - name: Set PowerShell Execution Policy
         run: Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
       - name: Install Chocolatey
@@ -21,11 +24,37 @@ jobs:
       - name: Display Chocolatey Log
         if: failure()
         run: Get-Content -Path "C:\ProgramData\chocolatey\logs\chocolatey.log"
+      - name: Display dbForge Installer Log
+        if: failure()
+        run: |
+          if (Test-Path "C:\Users\runneradmin\AppData\Local\Temp\chocolatey\dbforge-sql-devops\dbforge-sql-devops.1.2.78.Install.log") {
+            Get-Content -Path "C:\Users\runneradmin\AppData\Local\Temp\chocolatey\dbforge-sql-devops\dbforge-sql-devops.1.2.78.Install.log"
+          } else {
+            Write-Host "Installer log not found"
+          }
       - name: Fallback to Manual Install
         if: failure()
         run: |
+          # Check resources again
+          $memory = Get-CimInstance Win32_OperatingSystem
+          Write-Host "Free Memory: $($memory.FreePhysicalMemory / 1MB) MB"
+          $disk = Get-PSDrive -Name C
+          Write-Host "Free Disk Space: $($disk.Free / 1GB) GB"
+          # Download installer
           Invoke-WebRequest -Uri "https://choco.devart.com/s/39D10B263B1FA4133C620152B61E984BDB890ECA659E8BE9889E799896EC0414/devopspowershellsql12.exe" -OutFile "devopspowershellsql12.exe"
-          .\devopspowershellsql12.exe /VERYSILENT /FORCECLOSEAPPLICATIONS /ngen=0 /log="install.log"
+          # Run installer
+          Start-Process -FilePath ".\devopspowershellsql12.exe" -ArgumentList "/VERYSILENT /FORCECLOSEAPPLICATIONS /ngen=0 /log=`"install.log`"" -Verb RunAs -Wait
+          # Check exit code
+          if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3010 -or $LASTEXITCODE -eq 1641) {
+            Write-Host "Manual installation succeeded with exit code $LASTEXITCODE"
+          } else {
+            Write-Host "Manual installation failed with exit code $LASTEXITCODE"
+          }
       - name: Display Manual Install Log
         if: failure()
-        run: Get-Content -Path "install.log"
+        run: |
+          if (Test-Path "install.log") {
+            Get-Content -Path "install.log"
+          } else {
+            Write-Host "Manual install log not found"
+          }
