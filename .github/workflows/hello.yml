@@ -21,6 +21,14 @@ jobs:
       - name: Set PowerShell Execution Policy
         run: Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
+      - name: Install PowerShellGet and PackageManagement
+        run: |
+          # Install PowerShellGet and PackageManagement modules
+          Install-Module -Name PowerShellGet -Force -AllowClobber
+          Install-Module -Name PackageManagement -Force -AllowClobber
+          Import-Module PowerShellGet
+          Import-Module PackageManagement
+
       - name: Download dbForge SQL DevOps Installer
         run: |
           # Download the installer from the provided URL
@@ -49,4 +57,11 @@ jobs:
             Get-Content -Path "install.log"
           } else {
             Write-Host "Installation log not found"
+         
+      - name: Ensure Installation Succeeded
+        run: |
+          if (-not (Test-Path "C:\Program Files (x86)\dbForge DevOps Automation for SQL Server")) {
+            Write-Host "Installation failed"
+            exit 1
           }
+          Write-Host "Installation succeeded"
