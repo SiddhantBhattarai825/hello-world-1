@@ -1,0 +1,31 @@
+name: Install dbForge DevOps Automation
+on: [push]
+jobs:
+  install:
+    runs-on: windows-latest
+    steps:
+      - name: Check System Resources
+        run: |
+          Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory, TotalVisibleMemorySize
+          Get-PSDrive -Name C
+      - name: Set PowerShell Execution Policy
+        run: Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+      - name: Install Chocolatey
+        run: |
+          Set-ExecutionPolicy Bypass -Scope Process -Force
+          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+          Invoke-WebRequest https://chocolatey.org/install.ps1 -UseBasicParsing | Invoke-Expression
+      - name: Try Chocolatey Install
+        run: choco install dbforge-sql-devops -y --no-progress --debug
+        continue-on-error: true
+      - name: Display Chocolatey Log
+        if: failure()
+        run: Get-Content -Path "C:\ProgramData\chocolatey\logs\chocolatey.log"
+      - name: Fallback to Manual Install
+        if: failure()
+        run: |
+          Invoke-WebRequest -Uri "https://choco.devart.com/s/39D10B263B1FA4133C620152B61E984BDB890ECA659E8BE9889E799896EC0414/devopspowershellsql12.exe" -OutFile "devopspowershellsql12.exe"
+          .\devopspowershellsql12.exe /VERYSILENT /FORCECLOSEAPPLICATIONS /ngen=0 /log="install.log"
+      - name: Display Manual Install Log
+        if: failure()
+        run: Get-Content -Path "install.log"
