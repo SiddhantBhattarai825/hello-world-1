@@ -1,8 +1,14 @@
-name: Install dbForge DevOps Automation
-on: [push]
+name: Install dbForge DevOps Automation for SQL Server
+
+on: 
+  push:
+    branches:
+      - main
+
 jobs:
   install:
     runs-on: windows-latest
+
     steps:
       - name: Check System Resources
         run: |
@@ -22,7 +28,8 @@ jobs:
           Invoke-WebRequest https://chocolatey.org/install.ps1 -UseBasicParsing | Invoke-Expression
 
       - name: Try Chocolatey Install
-        run: choco install dbforge-sql-devops -y --no-progress --debug
+        run: |
+          choco install dbforge-sql-devops -y --no-progress --debug --verbose --log-level=debug
         continue-on-error: true
 
       - name: Display Chocolatey Log
@@ -41,16 +48,20 @@ jobs:
       - name: Fallback to Manual Install
         if: failure()
         run: |
-          # Check resources again
+          Write-Host "Starting manual installation of dbForge DevOps Automation..."
+          # Check system resources again
           $memory = Get-CimInstance Win32_OperatingSystem
           Write-Host "Free Memory: $($memory.FreePhysicalMemory / 1MB) MB"
           $disk = Get-PSDrive -Name C
-          Write-Host "Free Disk Space: $($disk.Free / 1GB) GB"
-          # Download installer
+          Write-Host "Free Disk Space on C: $($disk.Free / 1GB) GB"
+          
+          # Download the installer
           Invoke-WebRequest -Uri "https://choco.devart.com/s/39D10B263B1FA4133C620152B61E984BDB890ECA659E8BE9889E799896EC0414/devopspowershellsql12.exe" -OutFile "devopspowershellsql12.exe"
-          # Run installer
+          
+          # Run the installer silently
           Start-Process -FilePath ".\devopspowershellsql12.exe" -ArgumentList "/VERYSILENT /FORCECLOSEAPPLICATIONS /ngen=0 /log=`"install.log`"" -Verb RunAs -Wait
-          # Check exit code
+
+          # Check the installation exit code
           if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3010 -or $LASTEXITCODE -eq 1641) {
             Write-Host "Manual installation succeeded with exit code $LASTEXITCODE"
           } else {
@@ -65,3 +76,11 @@ jobs:
           } else {
             Write-Host "Manual install log not found"
           }
+
+      - name: Ensure Installation Succeeded
+        run: |
+          if (-not (Test-Path "C:\Program Files (x86)\dbForge DevOps Automation for SQL Server")) {
+            Write-Host "Installation failed"
+            exit 1
+          }
+          Write-Host "Installation succeeded"
