@@ -21,11 +21,18 @@ jobs:
       - name: Set PowerShell Execution Policy
         run: Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
-      - name: Install PowerShellGet and PackageManagement
+      - name: Uninstall Existing PackageManagement Module (if in use)
         run: |
-          # Install PowerShellGet and PackageManagement modules
-          Install-Module -Name PowerShellGet -Force -AllowClobber
-          Install-Module -Name PackageManagement -Force -AllowClobber
+          # Unload and uninstall existing PackageManagement module
+          Uninstall-Module -Name PackageManagement -Force -AllVersions
+          Import-Module PowerShellGet -Force
+          Import-Module PackageManagement -Force
+
+      - name: Install PowerShellGet and PackageManagement Modules
+        run: |
+          # Force installation of PowerShellGet and PackageManagement
+          Install-Module -Name PowerShellGet -Force -AllowClobber -Scope CurrentUser
+          Install-Module -Name PackageManagement -Force -AllowClobber -Scope CurrentUser
           Import-Module PowerShellGet
           Import-Module PackageManagement
 
@@ -58,7 +65,7 @@ jobs:
           } else {
             Write-Host "Installation log not found"
           }
-          
+
       - name: Ensure Installation Succeeded
         run: |
           if (-not (Test-Path "C:\Program Files (x86)\dbForge DevOps Automation for SQL Server")) {
