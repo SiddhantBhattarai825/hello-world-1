@@ -1,4 +1,4 @@
-name: Manual Install dbForge DevOps Automation for SQL Server
+name: Install dbForge SQL Tools via PowerShell
 
 on:
   push:
@@ -21,31 +21,19 @@ jobs:
       - name: Set PowerShell Execution Policy
         run: Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
-      - name: Install PowerShellGet and PackageManagement
-        run: |
-          # Check if PackageManagement module exists, if not install it
-          if (-not (Get-Module -ListAvailable -Name PackageManagement)) {
-            Install-Module -Name PackageManagement -Force -AllowClobber -Scope CurrentUser
-          }
-          
-          # Install PowerShellGet if necessary
-          if (-not (Get-Module -ListAvailable -Name PowerShellGet)) {
-            Install-Module -Name PowerShellGet -Force -AllowClobber -Scope CurrentUser
-          }
-          
-          # Import modules to ensure they are available for use
-          Import-Module PowerShellGet -Force
-          Import-Module PackageManagement -Force
-
-      - name: Download dbForge SQL DevOps Installer
+      - name: Download dbForge SQL Tools Installer
         run: |
           # Download the installer from the provided URL
           Invoke-WebRequest -Uri "https://choco.devart.com/s/39D10B263B1FA4133C620152B61E984BDB890ECA659E8BE9889E799896EC0414/devopspowershellsql12.exe" -OutFile "devopspowershellsql12.exe"
 
-      - name: Run dbForge SQL DevOps Installer Silently
+      - name: Install dbForge SQL Tools via PowerShell
         run: |
-          # Run the installer with silent arguments
-          Start-Process -FilePath ".\devopspowershellsql12.exe" -ArgumentList "/VERYSILENT /FORCECLOSEAPPLICATIONS /ngen=0 /log=`"install.log`"" -Wait
+          # Define installer path and arguments
+          $installerPath = ".\devopspowershellsql12.exe"
+          $arguments = "/VERYSILENT /FORCECLOSEAPPLICATIONS /ngen=0 /log=`"install.log`""
+          
+          # Run the installer silently
+          Start-Process -FilePath $installerPath -ArgumentList $arguments -Wait
 
       - name: Verify Installation
         run: |
