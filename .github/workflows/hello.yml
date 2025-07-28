@@ -24,9 +24,9 @@ jobs:
 
       - name: Load dbForge Module and List Commands
         run: |
-          try {
-            $modulePath = "C:\Program Files\Devart\dbForge DevOps Automation PowerShell for SQL Server\dbforge.sqlautomation.powershell.dll"
+          $modulePath = "C:\Program Files\Devart\dbForge DevOps Automation PowerShell for SQL Server\dbforge.sqlautomation.powershell.dll"
 
+          try {
             if (-Not (Test-Path $modulePath)) {
               throw "❌ dbForge module not found at path: $modulePath"
             }
