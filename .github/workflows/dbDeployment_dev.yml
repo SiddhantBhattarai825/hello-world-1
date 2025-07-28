@@ -115,10 +115,18 @@ jobs:
             New-Item -ItemType Directory -Path "$archiveDir\sbscCustomer" -Force
             Move-Item ".\MIGRATION\sbscCustomer\*.sql" -Destination "$archiveDir\sbscCustomer"
           }
-
+          
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git remote set-url origin https://x-access-token:${{ secrets.GH_PUSH_TOKEN }}@github.com/${{ github.repository }}
+          
           git add .
-          git commit -m "Archive migration files $timestamp [skip ci]" || exit 0
+          
+          try {
+            git commit -m "Archive migration files $timestamp [skip ci]"
+          } catch {
+            Write-Host "Nothing to commit, skipping push."
+            exit 0
+          }
+          
           git push
