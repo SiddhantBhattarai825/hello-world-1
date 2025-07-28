@@ -42,7 +42,7 @@ jobs:
               Import-Module Devart.DbForge.DevOpsAutomation.SqlServer -ErrorAction Stop
               Write-Host "✓ dbForge module loaded"
           } catch {
-              Write-Host ("##[error]Failed to import dbForge module: {0}" -f $_)
+              Write-Host ("##[error]Failed to import dbForge module: $($_)")
               exit 1
           }
 
