@@ -88,7 +88,7 @@ jobs:
           } else {
             New-DevartSqlDatabaseConnection -Server $env:DB_SERVER -Database $env:SBSC_AUDIT_DB -WindowsAuthentication $true
           }
-          Invoke-DevartSyncDatabaseSchema -Source ".\sbscAudit" -Target $auditConnection
+          Invoke-DevartSyncDatabaseSchema -Source ".\sbscAudit" -Target $auditConnection -FilterPath ".\filters.scflt"
 
       - name: Schema Compare and Deploy Customer
         run: |
@@ -97,7 +97,7 @@ jobs:
           } else {
             New-DevartSqlDatabaseConnection -Server $env:DB_SERVER -Database $env:SBSC_CUSTOMER_DB -WindowsAuthentication $true
           }
-          Invoke-DevartSyncDatabaseSchema -Source ".\sbscCustomer" -Target $customerConnection
+          Invoke-DevartSyncDatabaseSchema -Source ".\sbscCustomer" -Target $customerConnection -FilterPath ".\filters.scflt"
 
       - name: Archive Migrations
         if: steps.check_migrations.outputs.audit_migrations > 0 || steps.check_migrations.outputs.customer_migrations > 0
