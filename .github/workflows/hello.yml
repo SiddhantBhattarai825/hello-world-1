@@ -1,23 +1,42 @@
 name: Test dbForge Module on Self-hosted Runner
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+defaults:
+  run:
+    shell: pwsh
 
 jobs:
   test-dbforge-module:
     runs-on: self-hosted
-    steps:
-      - name: Verify runner and PowerShell
-        run: |
-          $PSVersionTable
-        shell: powershell
 
-      - name: Load dbForge Module and List Cmdlets
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Verify PowerShell Environment
         run: |
-          Import-Module "C:\Program Files\Devart\dbForge DevOps Automation PowerShell for SQL Server\dbforge.sqlautomation.powershell.dll"
-          
-          Write-Host "`n✅ dbForge Module Loaded Successfully"
-          
-          # List all dbForge cmdlets to verify it's working
-          Get-Command -Module dbForge.SqlAutomation.PowerShell | Format-Table Name, CommandType
-        shell: powershell
+          Write-Host "`n🧪 PowerShell Version Table:"
+          $PSVersionTable
+
+      - name: Load dbForge Module and List Commands
+        run: |
+          try {
+            $modulePath = "C:\Program Files\Devart\dbForge DevOps Automation PowerShell for SQL Server\dbforge.sqlautomation.powershell.dll"
+
+            if (-Not (Test-Path $modulePath)) {
+              throw "❌ dbForge module not found at path: $modulePath"
+            }
+
+            Import-Module $modulePath -Force
+            Write-Host "`n✅ dbForge Module Loaded Successfully"
+            Write-Host "`n📦 Available dbForge Cmdlets:"
+            Get-Command -Module dbForge.SqlAutomation.PowerShell | Format-Table Name, CommandType
+          }
+          catch {
+            Write-Error "`n🔥 Failed to load dbForge module: $_"
+            exit 1
+          }
