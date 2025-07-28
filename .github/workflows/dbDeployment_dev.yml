@@ -22,6 +22,12 @@ jobs:
         shell: powershell
 
     steps:
+      - name: Add Git to PATH
+        run: |
+          $gitPath = "C:\Program Files\Git\cmd"
+          $env:PATH = "$gitPath;$env:PATH"
+          Write-Host "Updated PATH: $env:PATH"
+          
       - name: Confirm Git is available
         run: git --version
         
