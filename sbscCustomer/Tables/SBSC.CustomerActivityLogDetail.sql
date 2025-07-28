@@ -1,0 +1,13 @@
+﻿CREATE TABLE [SBSC].[CustomerActivityLogDetail] (
+  [Id] [bigint] IDENTITY,
+  [ActivityLogId] [bigint] NOT NULL,
+  [ColumnName] [nvarchar](100) NOT NULL,
+  [OldValue] [nvarchar](max) NULL,
+  [NewValue] [nvarchar](max) NULL,
+  CONSTRAINT [PK_ActivityLogDetail] PRIMARY KEY CLUSTERED ([Id])
+)
+GO
+
+ALTER TABLE [SBSC].[CustomerActivityLogDetail]
+  ADD CONSTRAINT [FK_ActivityLogDetail_ActivityLog] FOREIGN KEY ([ActivityLogId]) REFERENCES [SBSC].[CustomerActivityLog] ([Id]) ON DELETE CASCADE
+GO
