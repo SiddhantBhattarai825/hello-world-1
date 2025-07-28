@@ -2,8 +2,7 @@ name: Database CI/CD Pipeline
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 env:
@@ -26,15 +25,31 @@ jobs:
         run: |
           $gitPath = "C:\Users\spont\Git\cmd"
           $env:PATH = "$gitPath;$env:PATH"
-          Write-Host "Updated PATH: $env:PATH"
-          
-          # Verify git is accessible
           & "$gitPath\git.exe" --version
-          
+
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
+      - name: Validate Required Environment Variables
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:SBSC_AUDIT_DB)) {
+            Write-Host "##[error]SBSC_AUDIT_DB is not set or empty"
+            exit 1
+          }
+          if ([string]::IsNullOrWhiteSpace($env:SBSC_CUSTOMER_DB)) {
+            Write-Host "##[error]SBSC_CUSTOMER_DB is not set or empty"
+            exit 1
+          }
+
+      - name: Import DevOps Modules
+        run: |
+          Import-Module Devart.DbForge.DevOpsAutomation.SqlServer -ErrorAction Stop
+          Write-Host "✓ DevOpsAutomation module loaded"
+
+          Import-Module DevartSqlServer -Force
+          Write-Host "✓ DevartSqlServer module imported successfully"
 
       - name: Create Database Connections
         run: |
@@ -54,49 +69,49 @@ jobs:
         run: |
           $auditCount = (Get-ChildItem -Path ".\MIGRATION\sbscAudit" -Filter "*.sql" -ErrorAction SilentlyContinue).Count
           $customerCount = (Get-ChildItem -Path ".\MIGRATION\sbscCustomer" -Filter "*.sql" -ErrorAction SilentlyContinue).Count
-          Write-Output "audit_migrations=$auditCount" >> $env:GITHUB_OUTPUT
-          Write-Output "customer_migrations=$customerCount" >> $env:GITHUB_OUTPUT
+          echo "audit_migrations=$auditCount" >> $env:GITHUB_OUTPUT
+          echo "customer_migrations=$customerCount" >> $env:GITHUB_OUTPUT
 
-      - name: Run Audit Migrations
-        if: ${{ fromJson(steps.check_migrations.outputs.audit_migrations) > 0 }}
+      - name: Execute Audit Migrations
+        if: steps.check_migrations.outputs.audit_migrations > 0
         run: |
-          $auditConnection = if ($env:DB_USERNAME -and $env:DB_PASSWORD) {
+          $auditConnection = if ($env:DB_USERNAME) {
             New-DevartSqlDatabaseConnection -Server $env:DB_SERVER -Database $env:SBSC_AUDIT_DB -UserName $env:DB_USERNAME -Password $env:DB_PASSWORD
           } else {
             New-DevartSqlDatabaseConnection -Server $env:DB_SERVER -Database $env:SBSC_AUDIT_DB -WindowsAuthentication $true
           }
           Invoke-DevartExecuteScript -Input ".\MIGRATION\sbscAudit" -Connection $auditConnection
 
-      - name: Run Customer Migrations
-        if: ${{ fromJson(steps.check_migrations.outputs.customer_migrations) > 0 }}
+      - name: Execute Customer Migrations
+        if: steps.check_migrations.outputs.customer_migrations > 0
         run: |
-          $customerConnection = if ($env:DB_USERNAME -and $env:DB_PASSWORD) {
+          $customerConnection = if ($env:DB_USERNAME) {
             New-DevartSqlDatabaseConnection -Server $env:DB_SERVER -Database $env:SBSC_CUSTOMER_DB -UserName $env:DB_USERNAME -Password $env:DB_PASSWORD
           } else {
             New-DevartSqlDatabaseConnection -Server $env:DB_SERVER -Database $env:SBSC_CUSTOMER_DB -WindowsAuthentication $true
           }
           Invoke-DevartExecuteScript -Input ".\MIGRATION\sbscCustomer" -Connection $customerConnection
 
-      - name: Sync Audit Schema
+      - name: Schema Compare and Deploy Audit
         run: |
-          $auditConnection = if ($env:DB_USERNAME -and $env:DB_PASSWORD) {
+          $auditConnection = if ($env:DB_USERNAME) {
             New-DevartSqlDatabaseConnection -Server $env:DB_SERVER -Database $env:SBSC_AUDIT_DB -UserName $env:DB_USERNAME -Password $env:DB_PASSWORD
           } else {
             New-DevartSqlDatabaseConnection -Server $env:DB_SERVER -Database $env:SBSC_AUDIT_DB -WindowsAuthentication $true
           }
           Invoke-DevartSyncDatabaseSchema -Source ".\sbscAudit" -Target $auditConnection
 
-      - name: Sync Customer Schema
+      - name: Schema Compare and Deploy Customer
         run: |
-          $customerConnection = if ($env:DB_USERNAME -and $env:DB_PASSWORD) {
+          $customerConnection = if ($env:DB_USERNAME) {
             New-DevartSqlDatabaseConnection -Server $env:DB_SERVER -Database $env:SBSC_CUSTOMER_DB -UserName $env:DB_USERNAME -Password $env:DB_PASSWORD
           } else {
             New-DevartSqlDatabaseConnection -Server $env:DB_SERVER -Database $env:SBSC_CUSTOMER_DB -WindowsAuthentication $true
           }
           Invoke-DevartSyncDatabaseSchema -Source ".\sbscCustomer" -Target $customerConnection
 
-      - name: Archive Applied Migrations
-        if: ${{ fromJson(steps.check_migrations.outputs.audit_migrations) > 0 || fromJson(steps.check_migrations.outputs.customer_migrations) > 0 }}
+      - name: Archive Migrations
+        if: steps.check_migrations.outputs.audit_migrations > 0 || steps.check_migrations.outputs.customer_migrations > 0
         run: |
           $timestamp = Get-Date -Format 'yyyyMMdd_HHmmss'
           $archiveDir = "MIGRATION_ARCHIVE\$timestamp"
@@ -115,5 +130,5 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add .
-          git commit -m "Archive migration files $timestamp [skip ci]" || Write-Host "No changes to commit"
+          git commit -m "Archive migration files $timestamp [skip ci]" || exit 0
           git push
