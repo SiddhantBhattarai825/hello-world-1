@@ -16,15 +16,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Verify PowerShell Environment
-        run: |
-          $PSVersionTable
-
       - name: Load dbForge Module and List Commands
         run: |
-          Import-Module "C:\Program Files\Devart\dbForge DevOps Automation PowerShell for SQL Server\dbforge.sqlautomation.powershell.dll"
+          Import-Module Devart.DbForge.DevOpsAutomation.SqlServer -ErrorAction Stop
 
           Write-Host "`n✅ dbForge Module Loaded Successfully"
 
           # Show all available dbForge cmdlets
-          Get-Command -Module dbForge.SqlAutomation.PowerShell | Format-Table Name, CommandType
+          Get-Command -Module Devart.DbForge.DevOpsAutomation.SqlServer | Format-Table Name, CommandType
+
