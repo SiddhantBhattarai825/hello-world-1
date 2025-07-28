@@ -32,17 +32,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Validate Required Environment Variables
-        run: |
-          if ([string]::IsNullOrWhiteSpace($env:SBSC_AUDIT_DB)) {
-            Write-Host "##[error]SBSC_AUDIT_DB is not set or empty"
-            exit 1
-          }
-          if ([string]::IsNullOrWhiteSpace($env:SBSC_CUSTOMER_DB)) {
-            Write-Host "##[error]SBSC_CUSTOMER_DB is not set or empty"
-            exit 1
-          }
-
       - name: Import DevOps Modules
         run: |
           Import-Module Devart.DbForge.DevOpsAutomation.SqlServer -ErrorAction Stop
