@@ -118,6 +118,7 @@ jobs:
 
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          git remote set-url origin https://x-access-token:${{ secrets.GH_PUSH_TOKEN }}@github.com/${{ github.repository }}
           git add .
           git commit -m "Archive migration files $timestamp [skip ci]" || exit 0
           git push
