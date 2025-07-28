@@ -333,21 +333,21 @@ BEGIN
 		DECLARE @TotalPages INT;
 
 		-- Define the WHERE clause for search filtering
-		SET @WhereClause = N' WHERE CertificateCode LIKE @CertificationCode'; -- Filter by CertificateCode
+		SET @WhereClause = N' WHERE c.CertificateCode LIKE @CertificationCode'; -- Filter by CertificateCode
     
 		IF @SearchValue IS NOT NULL
 		BEGIN
 			SET @WhereClause += N'
-				AND (CONVERT(VARCHAR(19), AddedDate, 120) LIKE ''%'' + @SearchValue + ''%''
-				OR [Version] LIKE ''%'' + @SearchValue + ''%''
-				OR CONVERT(VARCHAR, IsActive) LIKE ''%'' + @SearchValue + ''%''
-				OR CONVERT(VARCHAR, Published) LIKE ''%'' + @SearchValue + ''%'')';
+				AND (CONVERT(VARCHAR(19), c.AddedDate, 120) LIKE ''%'' + @SearchValue + ''%''
+				OR c.[Version] LIKE ''%'' + @SearchValue + ''%''
+				OR CONVERT(VARCHAR, c.IsActive) LIKE ''%'' + @SearchValue + ''%''
+				OR CONVERT(VARCHAR, c.Published) LIKE ''%'' + @SearchValue + ''%'')';
 		END
 
 		-- Count total records
 		SET @SQL = N'
 			SELECT @TotalRecords = COUNT(Id)
-			FROM SBSC.Certification
+			FROM SBSC.Certification c
 		' + @WhereClause;
 
 		SET @ParamDefinition = N'@CertificationCode NVARCHAR(100), @SearchValue NVARCHAR(100), @TotalRecords INT OUTPUT';
@@ -363,8 +363,15 @@ BEGIN
 
 		-- Retrieve paginated data
 		SET @SQL = N'
-			SELECT Id, CertificateCode, [Version], AddedDate, IsActive, Published
-			FROM SBSC.Certification
+			SELECT 
+				c.Id, 
+				c.CertificateCode, 
+				c.[Version], 
+				c.AddedDate, 
+				c.IsActive, 
+				c.Published,
+				(SELECT TOP 1 PublishedDate FROM SBSC.CertificationLanguage WHERE CertificationId = c.Id ORDER BY PublishedDate ASC) AS PublishedDate
+			FROM SBSC.Certification c
 			' + @WhereClause + '
 			ORDER BY ' + QUOTENAME(@SortColumn) + ' ' + @SortDirection + '
 			OFFSET ' + CAST(@Offset AS NVARCHAR(10)) + ' ROWS 

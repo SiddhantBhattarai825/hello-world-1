@@ -1,6 +1,5 @@
 ﻿SET QUOTED_IDENTIFIER, ANSI_NULLS ON
 GO
-
 -- =============================================
 -- Author:      <Author,,Name>
 -- Create date: <Create Date,,>
@@ -294,6 +293,9 @@ BEGIN
 								   END,
 					IsWarning = ISNULL(@IsWarning, IsWarning)
 				WHERE DocId = @Id AND CertificationId = @CertificationId;
+
+				DELETE FROM SBSC.DocumentsCertifications
+				WHERE DocId = @Id AND CertificationId != @CertificationId;
 			END
 			ELSE
 			BEGIN
@@ -328,8 +330,9 @@ BEGIN
 			
 			-- Return updated document
 			SELECT 
-				@Id AS Id, 
-				@IsVisible AS IsVisible;
+				d.Id AS Id, 
+				IsVisible AS IsVisible
+			FROM SBSC.Documents d WHERE d.Id = @Id;
 
 			COMMIT TRANSACTION;
 		END TRY
