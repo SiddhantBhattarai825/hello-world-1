@@ -36,16 +36,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Import dbForge DevOps Module
-        run: |
-          try {
-              Import-Module Devart.DbForge.DevOpsAutomation.SqlServer -ErrorAction Stop
-              Write-Host "✓ dbForge module loaded"
-          } catch {
-              Write-Host ("##[error]Failed to import dbForge module: $($_)")
-              exit 1
-          }
-
       - name: Create Database Connections
         run: |
           if ($env:DB_USERNAME -and $env:DB_PASSWORD) {
