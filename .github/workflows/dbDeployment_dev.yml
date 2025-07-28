@@ -39,11 +39,11 @@ jobs:
       - name: Import dbForge DevOps Module
         run: |
           try {
-            Import-Module Devart.DbForge.DevOpsAutomation.SqlServer -ErrorAction Stop
-            Write-Host "✓ dbForge module loaded"
+              Import-Module Devart.DbForge.DevOpsAutomation.SqlServer -ErrorAction Stop
+              Write-Host "✓ dbForge module loaded"
           } catch {
-            Write-Host "##[error]Failed to import dbForge module: $_"
-            exit 1
+              Write-Host ("##[error]Failed to import dbForge module: {0}" -f $_)
+              exit 1
           }
 
       - name: Create Database Connections
@@ -55,6 +55,7 @@ jobs:
             $global:AuditConnection = New-DevartSqlDatabaseConnection -Server $env:DB_SERVER -Database $env:SBSC_AUDIT_DB -WindowsAuthentication $true
             $global:CustomerConnection = New-DevartSqlDatabaseConnection -Server $env:DB_SERVER -Database $env:SBSC_CUSTOMER_DB -WindowsAuthentication $true
           }
+
           Test-DevartDatabaseConnection -Connection $global:AuditConnection
           Test-DevartDatabaseConnection -Connection $global:CustomerConnection
 
