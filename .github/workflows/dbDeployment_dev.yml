@@ -22,16 +22,16 @@ jobs:
         shell: powershell
 
     steps:
-      - name: Add Git to PATH
+      - name: Configure Git Path
         run: |
-          $gitPath = "C:\Program Files\Git\cmd"
+          $gitPath = "C:\Users\spont\Git\cmd"
           $env:PATH = "$gitPath;$env:PATH"
           Write-Host "Updated PATH: $env:PATH"
           
-      - name: Confirm Git is available
-        run: git --version
-        
-      - name: Checkout code with full Git history
+          # Verify git is accessible
+          & "$gitPath\git.exe" --version
+          
+      - name: Checkout code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
