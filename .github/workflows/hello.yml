@@ -12,31 +12,19 @@ defaults:
 jobs:
   test-dbforge-module:
     runs-on: self-hosted
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
       - name: Verify PowerShell Environment
         run: |
-          Write-Host "`n🧪 PowerShell Version Table:"
           $PSVersionTable
 
       - name: Load dbForge Module and List Commands
         run: |
-          $modulePath = "C:\Program Files\Devart\dbForge DevOps Automation PowerShell for SQL Server\dbforge.sqlautomation.powershell.dll"
+          Import-Module "C:\Program Files\Devart\dbForge DevOps Automation PowerShell for SQL Server\dbforge.sqlautomation.powershell.dll"
 
-          try {
-            if (-Not (Test-Path $modulePath)) {
-              throw "❌ dbForge module not found at path: $modulePath"
-            }
+          Write-Host "`n✅ dbForge Module Loaded Successfully"
 
-            Import-Module $modulePath -Force
-            Write-Host "`n✅ dbForge Module Loaded Successfully"
-            Write-Host "`n📦 Available dbForge Cmdlets:"
-            Get-Command -Module dbForge.SqlAutomation.PowerShell | Format-Table Name, CommandType
-          }
-          catch {
-            Write-Error "`n🔥 Failed to load dbForge module: $_"
-            exit 1
-          }
+          # Show all available dbForge cmdlets
+          Get-Command -Module dbForge.SqlAutomation.PowerShell | Format-Table Name, CommandType
