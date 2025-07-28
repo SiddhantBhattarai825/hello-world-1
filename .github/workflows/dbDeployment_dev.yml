@@ -116,17 +116,27 @@ jobs:
             Move-Item ".\MIGRATION\sbscCustomer\*.sql" -Destination "$archiveDir\sbscCustomer"
           }
           
+          # Fix: Add Git to PATH
+          $gitPath = "C:\Users\spont\Git\cmd"
+          $env:PATH = "$gitPath;$env:PATH"
+          & "$gitPath\git.exe" --version
+          
+          # Git identity setup
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          
+          # Auth for pushing with token
           git remote set-url origin https://x-access-token:${{ secrets.GH_PUSH_TOKEN }}@github.com/${{ github.repository }}
           
+          # Add and commit files
           git add .
           
           try {
             git commit -m "Archive migration files $timestamp [skip ci]"
           } catch {
-            Write-Host "Nothing to commit, skipping push."
+            Write-Host "Nothing to commit. Skipping push."
             exit 0
           }
           
+          # Push changes
           git push
